@@ -1,0 +1,80 @@
+name: Publish verified preview packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag with a draft release and four verified Mac assets
+        required: true
+      source_run:
+        description: Successful Windows and Linux build run for the same tagged commit
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      SOURCE_RUN: ${{ inputs.source_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate the draft and source builds
+        shell: bash
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$SOURCE_RUN" =~ ^[0-9]+$ ]]
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          test "$(git rev-list -n 1 "$RELEASE_TAG")" = "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" --jq .head_sha)"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN/jobs?per_page=100" > source-jobs.json
+          python3 - <<'PY'
+          import json
+          jobs=json.load(open('source-jobs.json'))['jobs']
+          for name in ('Windows x64', 'Linux x64'):
+              selected=[job for job in jobs if job['name']==name]
+              assert len(selected)==1 and selected[0]['conclusion']=='success', name
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-x64
+          path: release-assets
+          run-id: ${{ inputs.source_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-x64
+          path: release-assets
+          run-id: ${{ inputs.source_run }}
+          github-token: ${{ github.token }}
+      - name: Fetch verified Mac packages and create checksums
+        shell: bash
+        run: |
+          gh release download "$RELEASE_TAG" --dir release-assets --pattern '*-mac-*.dmg' --pattern '*-mac-*.zip'
+          python3 - <<'PY'
+          import hashlib, os, pathlib
+          root=pathlib.Path('release-assets')
+          version=os.environ['RELEASE_TAG'][1:]
+          prefix=f'Claude-Profiles-{version}-'
+          expected={prefix+suffix for suffix in (
+            'mac-arm64.dmg', 'mac-arm64.zip', 'mac-x64.dmg', 'mac-x64.zip',
+            'win-x64-setup.exe', 'win-x64-portable.exe', 'linux-x64.AppImage', 'linux-x64.deb')}
+          assert {p.name for p in root.iterdir()}==expected, 'Unexpected package set'
+          with (root/'SHA256SUMS.txt').open('w') as out:
+              for name in sorted(expected):
+                  with (root/name).open('rb') as data:
+                      checksum=hashlib.file_digest(data, 'sha256').hexdigest()
+                  out.write(f'{checksum}  {name}\n')
+          PY
+      - name: Complete and publish the preview
+        shell: bash
+        run: |
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          gh release upload "$RELEASE_TAG" release-assets/*-win-*.exe release-assets/*-linux-* release-assets/SHA256SUMS.txt --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --prerelease

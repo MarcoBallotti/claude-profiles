@@ -13,6 +13,8 @@ Mac preview builds use an ad-hoc signature with hardened runtime. The entitlemen
 
 If macOS signing reports “resource fork, Finder information, or similar detritus not allowed” in a cloud-synced working folder, build into a local temporary directory: `npm run dist:mac -- --config.directories.output=/private/tmp/claude-profiles-dist`. Sync services can attach Finder metadata to generated app bundles; changing the output directory avoids altering system security settings.
 
+If hosted Mac runners are unavailable, maintainers can build both Mac architectures at an existing tag, verify their bundle signatures, and upload the four archives to a draft prerelease. The manual **Publish verified preview packages** workflow combines them with successful Windows/Linux artifacts from the same commit, checks the package set, computes checksums and publishes. Record this build provenance in the release notes. Cancel the original tag workflow first to prevent two publishers; normal tag builds remain the default release path.
+
 Useful contributions include testing actual sign-in flows on each OS, improving installation detection, localization, and handling changes in Claude Desktop’s multi-instance behavior. Describe which OS, Claude version and install channel you tested. A green package build is not evidence of a successful interactive sign-in.
 
 Never commit account data, credentials, cookies, conversation history or a real profile registry. Keep fixtures synthetic. Do not add telemetry, credential extraction, session sharing or automatic account rotation. Tests must use temporary folders and harmless processes; they must not launch Claude or touch the contributor’s real profiles.
