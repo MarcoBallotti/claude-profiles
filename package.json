@@ -1,6 +1,6 @@
 {
   "name": "claude-profiles",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Separate Claude accounts. One desktop. An open-source profile launcher for macOS, Windows and Linux.",
   "type": "module",
   "main": "src/main.mjs",
@@ -8,9 +8,16 @@
   "license": "MIT",
   "author": "MarcoBallotti",
   "homepage": "https://github.com/MarcoBallotti/claude-profiles",
-  "repository": { "type": "git", "url": "https://github.com/MarcoBallotti/claude-profiles.git" },
-  "bugs": { "url": "https://github.com/MarcoBallotti/claude-profiles/issues" },
-  "engines": { "node": ">=22.12.0" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MarcoBallotti/claude-profiles.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MarcoBallotti/claude-profiles/issues"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.mjs",
@@ -30,19 +37,57 @@
     "productName": "Claude Profiles",
     "copyright": "Copyright © 2026 Claude Profiles contributors",
     "asar": true,
-    "files": ["src/**/*", "assets/icon.png", "assets/tray.png", "assets/trayTemplate.png", "LICENSE", "package.json"],
-    "directories": { "output": "dist", "buildResources": "assets" },
+    "files": [
+      "src/**/*",
+      "assets/icon.png",
+      "assets/tray.png",
+      "assets/trayTemplate.png",
+      "LICENSE",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
     "artifactName": "Claude-Profiles-${version}-${os}-${arch}.${ext}",
     "mac": {
       "category": "public.app-category.developer-tools",
-      "target": ["zip", "dmg"],
+      "target": [
+        "zip",
+        "dmg"
+      ],
       "icon": "assets/icon.icns",
-      "identity": null,
+      "identity": "-",
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist",
+      "notarize": false,
       "minimumSystemVersion": "13.0"
     },
-    "win": { "target": ["nsis", "portable"], "icon": "assets/icon.ico" },
-    "nsis": { "artifactName": "Claude-Profiles-${version}-win-${arch}-setup.${ext}", "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true, "deleteAppDataOnUninstall": false },
-    "portable": { "artifactName": "Claude-Profiles-${version}-win-${arch}-portable.${ext}" },
-    "linux": { "target": ["AppImage", "deb"], "category": "Development", "icon": "assets/icon.png", "maintainer": "Claude Profiles contributors" }
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "artifactName": "Claude-Profiles-${version}-win-${arch}-setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "Claude-Profiles-${version}-win-${arch}-portable.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development",
+      "icon": "assets/icon.png",
+      "maintainer": "Claude Profiles contributors"
+    }
   }
 }

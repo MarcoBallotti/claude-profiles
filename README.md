@@ -51,7 +51,7 @@ Get the packages from [GitHub Releases](https://github.com/MarcoBallotti/claude-
 
 **Preview release:** packages and unit tests are built on all three operating systems. Interactive Claude sign-in flows have not been verified on every OS/install channel. Desktop multi-profile behavior is experimental and may change when Claude updates. Please report your OS, Claude version and installation channel with compatibility issues.
 
-Builds are not Apple-notarized or Windows code-signed. The operating system may ask you to confirm the publisher. Release checksums are provided in `SHA256SUMS.txt`.
+Mac bundles use ad-hoc signatures verified during the build; they are not signed with an Apple Developer ID or notarized. Windows builds are not code-signed. The operating system may ask you to confirm the publisher. Release checksums are provided in `SHA256SUMS.txt`.
 
 Claude Desktop and Claude Code must be installed separately. Linux Desktop support follows the [official Claude Linux beta](https://code.claude.com/docs/en/desktop-linux), currently for Ubuntu 22.04+/Debian 12+. On other distributions, use Claude Code. Windows launches the native CLI, not a WSL installation.
 

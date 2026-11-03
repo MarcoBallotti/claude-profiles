@@ -5,7 +5,7 @@ body:
     id: platform
     attributes:
       label: OS and app versions
-      placeholder: Windows 11, Claude Profiles 0.2.0, Claude Desktop version…
+      placeholder: Windows 11, Claude Profiles 0.2.1, Claude Desktop version…
     validations:
       required: true
   - type: textarea

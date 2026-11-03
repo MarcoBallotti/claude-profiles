@@ -47,10 +47,20 @@ jobs:
       - run: npm run dist -- ${{ matrix.args }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          # Ad-hoc signatures use no certificate or secret, including on PRs.
+          CSC_FOR_PULL_REQUEST: 'true'
+      - name: Verify macOS bundle signatures
+        if: runner.os == 'macOS'
+        run: |
+          for application in dist/mac*/"Claude Profiles.app"; do
+            codesign --verify --deep --strict "$application"
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
           path: |
             dist/*.zip
             dist/*.dmg
