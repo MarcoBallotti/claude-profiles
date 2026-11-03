@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.cache/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+coverage/
+.impeccable/review/
+*.pem
+*.key
+profiles*.json
+!test/fixtures/**

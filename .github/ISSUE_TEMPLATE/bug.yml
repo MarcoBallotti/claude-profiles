@@ -1,0 +1,17 @@
+name: Bug report
+description: Report a reproducible problem without sharing account secrets.
+body:
+  - type: input
+    id: platform
+    attributes:
+      label: OS and app versions
+      placeholder: Windows 11, Claude Profiles 0.2.0, Claude Desktop version…
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps, expected behavior and actual behavior
+      description: Remove email addresses, tokens, cookies and private folder names from any logs or screenshots.
+    validations:
+      required: true

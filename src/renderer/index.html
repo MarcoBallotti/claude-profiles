@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Claude Profiles</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Profiles">
+      <div class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="12" y="4" width="16" height="17" rx="4"/><rect x="4" y="12" width="16" height="17" rx="4"/></svg><div><strong>Claude</strong><span>Profiles</span></div></div>
+      <label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="Find a profile" aria-label="Find a profile" autocomplete="off"></label>
+      <div class="list-title"><h2>Your profiles</h2><span id="profile-count"></span></div>
+      <nav id="profile-list" aria-label="Choose a profile"></nav>
+      <div class="sidebar-bottom"><button id="new-profile" class="secondary full"><span data-icon="plus"></span>New profile</button><p id="local-label"><span data-icon="drive"></span>Only on this device</p></div>
+    </aside>
+    <main>
+      <header class="toolbar"><span>Your accounts. Your space.</span><div><button class="icon-button" id="import-profile" aria-label="Import profiles" title="Import profiles"><span data-icon="import"></span></button><button class="icon-button" id="help" aria-label="How it works" title="How it works"><span data-icon="help"></span></button><button class="icon-button" id="settings" aria-label="Settings" title="Settings"><span data-icon="settings"></span></button></div></header>
+      <div id="content" class="content" aria-busy="true"><p class="empty">Loading your profiles…</p></div>
+      <div id="notice" class="notice" role="status" hidden><span id="notice-text"></span><button id="notice-action" hidden>Undo</button><button id="close-notice" class="icon-button" aria-label="Dismiss message"><span data-icon="close"></span></button></div>
+      <footer id="footer"></footer>
+    </main>
+  </div>
+  <dialog id="dialog" aria-labelledby="dialog-title"><form id="dialog-form"><div id="dialog-content"></div><p id="form-error" class="error" role="alert" hidden></p><div class="dialog-actions"><button type="button" class="secondary" id="cancel-dialog">Cancel</button><button type="submit" class="primary" id="submit-dialog">Save</button></div></form></dialog>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
