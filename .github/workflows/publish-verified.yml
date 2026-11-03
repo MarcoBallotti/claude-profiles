@@ -64,7 +64,7 @@ jobs:
           prefix=f'Claude-Profiles-{version}-'
           expected={prefix+suffix for suffix in (
             'mac-arm64.dmg', 'mac-arm64.zip', 'mac-x64.dmg', 'mac-x64.zip',
-            'win-x64-setup.exe', 'win-x64-portable.exe', 'linux-x64.AppImage', 'linux-x64.deb')}
+            'win-x64-setup.exe', 'win-x64-portable.exe', 'linux-x86_64.AppImage', 'linux-amd64.deb')}
           assert {p.name for p in root.iterdir()}==expected, 'Unexpected package set'
           with (root/'SHA256SUMS.txt').open('w') as out:
               for name in sorted(expected):
