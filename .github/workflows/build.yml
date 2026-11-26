@@ -70,7 +70,7 @@ jobs:
               test "$(plutil -extract CFBundleVersion raw -o - "$application/Contents/Info.plist")" = "1.$GITHUB_RUN_NUMBER.$GITHUB_RUN_ATTEMPT"
             fi
           done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           if-no-files-found: error
