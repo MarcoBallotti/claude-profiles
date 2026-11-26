@@ -10,6 +10,10 @@ First open-source, cross-platform preview of Claude Profiles.
 
 Download the archive or installer for your architecture. macOS: DMG or ZIP. Windows: setup or portable EXE. Linux: AppImage or DEB. `SHA256SUMS.txt` lists archive checksums.
 
+On macOS, copy Claude Profiles to a writable Applications folder. After the first installation, the app checks the GitHub `main-builds` pre-release for successful Apple Silicon and Intel builds. When **Install update** appears, click it to download the full build, install it and restart Claude Profiles.
+
+To distinguish Claude Desktop profiles on macOS, edit each profile and enable **Customize this profile in the Dock**. Choose a Dock name and a cloud color. When you reopen that profile, the launcher uses a locally signed copy of Claude Desktop. macOS may ask you to sign in again. The launcher rebuilds the copy when your installed Claude Desktop changes.
+
 **Preview limitations:** builds and core tests run on native CI runners. Interactive sign-in and multi-instance compatibility have not been verified with every Claude version and installation channel. Desktop profile separation is an experimental compatibility mechanism, not a stable Anthropic API. Desktop and CLI require separate first-time logins. Linux Desktop availability follows the official Ubuntu/Debian beta. Builds are not Apple-notarized or Windows code-signed.
 
 Please report compatibility findings with your OS, Claude version and installation channel, without including account credentials or private logs.

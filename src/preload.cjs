@@ -1,5 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
-const actions = new Set(['state', 'saveProfile', 'removeProfile', 'restoreProfile', 'saveSettings',
+const actions = new Set(['state', 'installUpdate', 'saveProfile', 'removeProfile', 'restoreProfile', 'saveSettings',
   'launchDesktop', 'launchCode', 'copyCommand', 'copyPreferences', 'discover', 'importProfile', 'choosePath', 'reveal', 'openDocs']);
 contextBridge.exposeInMainWorld('profiles', Object.freeze({
   invoke: (action, payload = {}) => {

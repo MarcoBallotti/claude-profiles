@@ -1,6 +1,6 @@
 {
   "name": "claude-profiles",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Separate Claude accounts. One desktop. An open-source profile launcher for macOS, Windows and Linux.",
   "type": "module",
   "main": "src/main.mjs",
@@ -40,6 +40,7 @@
     "files": [
       "src/**/*",
       "assets/icon.png",
+      "assets/dock/*.icns",
       "assets/tray.png",
       "assets/trayTemplate.png",
       "LICENSE",

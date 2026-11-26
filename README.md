@@ -14,7 +14,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/MarcoBallotti/claude-profiles/releases">Download</a> ·
+  <a href="#download"><img src="https://img.shields.io/badge/Download-Claude%20Profiles-a84e38?style=for-the-badge" alt="Download Claude Profiles"></a>
+</p>
+
+<p align="center">
   <a href="#get-started">Get started</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="docs/README.it.md">Italiano</a> ·
@@ -41,13 +44,14 @@ Claude Profiles opens the Claude applications already installed on your computer
 
 ## Download
 
-Get the packages from [GitHub Releases](https://github.com/MarcoBallotti/claude-profiles/releases).
+Download a **v0.2.1 preview** installer below or browse [all GitHub releases](https://github.com/MarcoBallotti/claude-profiles/releases).
 
-| Platform | Packages | Terminal integration |
-| --- | --- | --- |
-| macOS 13+ · Apple Silicon and Intel | `.dmg`, `.zip` | Terminal.app / zsh |
-| Windows 10/11 · x64 | Setup `.exe`, portable `.exe` | Native PowerShell and `claude.exe` |
-| Linux · x64 | `.AppImage`, `.deb` | GNOME Terminal, Konsole, Xfce Terminal, Kitty, Alacritty, xterm or the system terminal |
+| Platform | Direct download |
+| --- | --- |
+| macOS 13+ · Apple Silicon | [DMG](https://github.com/MarcoBallotti/claude-profiles/releases/download/v0.2.1/Claude-Profiles-0.2.1-mac-arm64.dmg) · [ZIP](https://github.com/MarcoBallotti/claude-profiles/releases/download/v0.2.1/Claude-Profiles-0.2.1-mac-arm64.zip) |
+| macOS 13+ · Intel | [DMG](https://github.com/MarcoBallotti/claude-profiles/releases/download/v0.2.1/Claude-Profiles-0.2.1-mac-x64.dmg) · [ZIP](https://github.com/MarcoBallotti/claude-profiles/releases/download/v0.2.1/Claude-Profiles-0.2.1-mac-x64.zip) |
+| Windows 10/11 · x64 | [Setup EXE](https://github.com/MarcoBallotti/claude-profiles/releases/download/v0.2.1/Claude-Profiles-0.2.1-win-x64-setup.exe) · [Portable EXE](https://github.com/MarcoBallotti/claude-profiles/releases/download/v0.2.1/Claude-Profiles-0.2.1-win-x64-portable.exe) |
+| Linux · x64 | [AppImage](https://github.com/MarcoBallotti/claude-profiles/releases/download/v0.2.1/Claude-Profiles-0.2.1-linux-x86_64.AppImage) · [DEB](https://github.com/MarcoBallotti/claude-profiles/releases/download/v0.2.1/Claude-Profiles-0.2.1-linux-amd64.deb) |
 
 **Preview release:** packages and unit tests are built on all three operating systems. Interactive Claude sign-in flows have not been verified on every OS/install channel. Desktop multi-profile behavior is experimental and may change when Claude updates. Please report your OS, Claude version and installation channel with compatibility issues.
 

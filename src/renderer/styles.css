@@ -135,3 +135,7 @@ legend { font-weight: 600; font-size: 13px; margin-bottom: 10px; }
 .help-step p { margin: 0; color: var(--muted); }
 @media (max-width: 900px) { .app-shell { grid-template-columns: 205px minmax(0, 1fr); } .content { padding: 20px 24px; } .toolbar { padding-inline: 24px; } .service-actions { flex-wrap: wrap; } .utility-row { flex-wrap: wrap; } .utility-row > div { min-width: 220px; } h1 { font-size: 30px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } button:active:not(:disabled) { transform: none; } }
+
+#install-update { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+#install-update .icon { width: 16px; height: 16px; }
+#dock-options { display: grid; gap: 10px; margin-top: 10px; }

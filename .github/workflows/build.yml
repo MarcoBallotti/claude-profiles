@@ -44,16 +44,31 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm test
-      - run: npm run dist -- ${{ matrix.args }}
+      - name: Package
+        shell: bash
         env:
+          BUILD_ARGS: ${{ matrix.args }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-          # Ad-hoc signatures use no certificate or secret, including on PRs.
           CSC_FOR_PULL_REQUEST: 'true'
+        run: |
+          read -r -a args <<< "$BUILD_ARGS"
+          if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/main && "$RUNNER_OS" == macOS ]]; then
+            build="$GITHUB_RUN_NUMBER.$GITHUB_RUN_ATTEMPT"
+            npm run dist -- "${args[@]}" "-c.buildVersion=1.$build" "-c.extraMetadata.mainBuild=$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT"
+            for archive in dist/*.zip; do
+              mv "$archive" "${archive/-mac-/-main-$build-mac-}"
+            done
+          else
+            npm run dist -- "${args[@]}"
+          fi
       - name: Verify macOS bundle signatures
         if: runner.os == 'macOS'
         run: |
           for application in dist/mac*/"Claude Profiles.app"; do
-            codesign --verify --deep --strict "$application"
+            codesign --verify --deep --strict -R '=identifier "io.github.marcoballotti.claudeprofiles"' "$application"
+            if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/main ]]; then
+              test "$(plutil -extract CFBundleVersion raw -o - "$application/Contents/Info.plist")" = "1.$GITHUB_RUN_NUMBER.$GITHUB_RUN_ATTEMPT"
+            fi
           done
       - uses: actions/upload-artifact@v4
         with:
@@ -88,3 +103,45 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" release-assets/* --verify-tag --prerelease --title "Claude Profiles $GITHUB_REF_NAME" --notes-file docs/RELEASE.md
+
+  main-mac-release:
+    name: Publish macOS main builds
+    if: always() && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: macos-*
+          path: main-assets
+          merge-multiple: true
+      - name: Publish update archives
+        shell: bash
+        run: |
+          shopt -s nullglob
+          arm=(main-assets/*-main-*-mac-arm64.zip)
+          intel=(main-assets/*-main-*-mac-x64.zip)
+          test "${#arm[@]}" -eq 1 && test "${#intel[@]}" -eq 1 || exit 1
+          gh release view main-builds --repo "$GITHUB_REPOSITORY" >/dev/null ||
+            gh release create main-builds --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+              --title "Claude Profiles · main builds" --notes "macOS builds for in-app updates." ||
+            gh release view main-builds --repo "$GITHUB_REPOSITORY" >/dev/null
+          release_id=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/main-builds" --jq .id)
+          for archive in "${arm[0]}" "${intel[0]}"; do
+            if ! gh api --paginate "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" \
+              --jq '.[] | select(.state == "uploaded") | .name' | awk -v name="${archive##*/}" '$0 == name { found = 1 } END { exit !found }'; then
+              gh release upload main-builds "$archive" --repo "$GITHUB_REPOSITORY"
+            fi
+          done
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" --slurp |
+            jq -r 'flatten | map(select(.state == "uploaded") |
+              . + (.name | capture("-main-(?<run>[0-9]+)\\.(?<attempt>[0-9]+)-mac-(?<arch>arm64|x64)\\.zip$"))) |
+              group_by(.arch)[] | sort_by([(.run|tonumber), (.attempt|tonumber)]) |
+              reverse | .[3:][] | .id' |
+            while read -r asset; do
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$asset" --silent || true
+            done

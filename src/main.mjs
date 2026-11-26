@@ -6,6 +6,7 @@ import { ProfileStore, canonical } from './core/store.mjs';
 import { copyPreferences } from './core/preferences.mjs';
 import { cliCommand } from './core/platform.mjs';
 import { Launcher } from './launcher.mjs';
+import { checkMacUpdate, installMacUpdate } from './core/updates.mjs';
 
 const base = path.dirname(fileURLToPath(import.meta.url));
 const renderer = path.join(base, 'renderer', 'index.html');
@@ -17,6 +18,9 @@ if (preview && (!previewRoot || !path.isAbsolute(previewRoot))) throw new Error(
 // Keep Chromium caches away from both Claude's data and the original native app's registry.
 if (preview) app.setPath('userData', path.join(previewRoot, 'Shell'));
 let window, tray, store, launcher, loadError, quitting = false, timer;
+const updatesEnabled = app.isPackaged && !preview && process.platform === 'darwin';
+const appBundle = path.resolve(process.execPath, '../../..');
+let update, updateTimer, installingUpdate = false, checkingUpdate = false;
 let status = { running: [], statusAvailable: false };
 const selectedFolders = new Set();
 const selectedExecutables = new Set();
@@ -39,7 +43,37 @@ async function initialize() {
   session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] }, (_details, callback) => callback({ cancel: true }));
   createWindow(); createTray(); createMenu();
   if (!loadError) await refreshStatus();
+  if (updatesEnabled) {
+    void refreshUpdate();
+    updateTimer = setInterval(refreshUpdate, 15 * 60 * 1000);
+    updateTimer.unref();
+  }
   timer = setInterval(refreshStatus, 10000); timer.unref();
+}
+
+async function refreshUpdate() {
+  if (checkingUpdate || installingUpdate) return;
+  checkingUpdate = true;
+  try {
+    const { mainBuild } = JSON.parse(fs.readFileSync(path.join(app.getAppPath(), 'package.json'), 'utf8'));
+    const next = await checkMacUpdate(process.arch, app.getVersion(), typeof mainBuild === 'string' ? mainBuild.replace('-', '.') : '');
+    if (!installingUpdate && next?.name !== update?.name) { update = next; changed(); }
+  } catch (error) {
+    console.warn('Could not check for a Claude Profiles update:', error.message);
+  } finally { checkingUpdate = false; }
+}
+
+async function installUpdate() {
+  if (!updatesEnabled || !update || installingUpdate) throw new Error('There is no update ready to install.');
+  installingUpdate = true; changed();
+  try {
+    await installMacUpdate(update, appBundle, process.execPath, () => app.relaunch({ execPath: process.execPath }));
+    app.quit();
+  } catch (error) {
+    installingUpdate = false; changed();
+    void refreshUpdate();
+    throw error;
+  }
 }
 
 function createWindow() {
@@ -128,12 +162,14 @@ ipcMain.handle('profiles:action', async (event, action, input = {}) => {
     if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame ||
         fileURLToPath(event.senderFrame.url) !== renderer) throw new Error('Untrusted request.');
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid request.');
-    if (loadError && !['state', 'openDocs', 'reveal'].includes(action)) throw new Error(loadError);
+    if (loadError && !['state', 'openDocs', 'reveal', 'installUpdate'].includes(action)) throw new Error(loadError);
     let value;
     switch (action) {
       case 'state': value = { ...(store.state || { profiles: [], archived: [], settings: {} }), ...status,
         platform: process.platform, version: app.getVersion(), preview, loadError, root: store.root,
+        update: update ? { build: update.build, installing: installingUpdate } : null,
         busy: [...busy].filter(id => id !== 'status'), installed: loadError ? {} : await launcher.detect() }; break;
+      case 'installUpdate': await installUpdate(); break;
       case 'saveProfile': value = store.save(input); changed(); break;
       case 'removeProfile': store.remove(input.id); changed(); break;
       case 'restoreProfile': store.restore(input.id); changed(); break;
@@ -188,5 +224,5 @@ ipcMain.handle('profiles:action', async (event, action, input = {}) => {
 });
 
 app.on('activate', () => showWindow());
-app.on('before-quit', () => { quitting = true; if (timer) clearInterval(timer); });
+app.on('before-quit', () => { quitting = true; if (timer) clearInterval(timer); clearInterval(updateTimer); });
 app.on('window-all-closed', () => { if (!tray) app.quit(); });

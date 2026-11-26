@@ -2,7 +2,7 @@
 
 **I tuoi account Claude, sullo stesso computer.** App open source per gestire profili personali, aziendali e dei clienti su macOS, Windows e Linux.
 
-[Scarica la versione più recente](https://github.com/MarcoBallotti/claude-profiles/releases) · [README completo in inglese](../README.md)
+[Scarica Claude Profiles](../README.md#download) · [README completo in inglese](../README.md)
 
 ## Come si usa
 

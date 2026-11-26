@@ -4,6 +4,8 @@ import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { desktopPlan, terminalPlan, terminalScript, findExecutable, isolatedEnvironment, windowsDesktopCommands } from './core/platform.mjs';
 
+import { activateMacDesktop, macDesktopProcesses, macProcessForProfile, prepareMacDockApp } from './core/mac-dock.mjs';
+
 const exec = promisify(execFile);
 const powershell = () => path.win32.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
 
@@ -42,7 +44,18 @@ export class Launcher {
     const executable = (await this.detect()).desktop;
     if (!executable) throw new Error('Claude Desktop was not found. Select your installed application in Settings.');
     this.store.prepare(id, 'desktop'); this.store.prepare(id, 'code');
-    return start(desktopPlan(profile, executable));
+    if (process.platform !== 'darwin') return start(desktopPlan(profile, executable));
+
+    const running = macProcessForProfile(await macDesktopProcesses(), profile, this.store.root, executable);
+    if (running && await activateMacDesktop(running.pid)) return;
+    if (running && (await macDesktopProcesses()).some(item => item.pid === running.pid)) {
+      throw new Error('Claude Desktop is already open for this profile. Select its window in the Dock.');
+    }
+    const bundle = profile.customDock ? await prepareMacDockApp(profile, executable, this.store.root) : executable;
+    const plan = desktopPlan(profile, bundle);
+    // Launch Services must use this specific bundle even if another Claude profile has the same identifier.
+    if (profile.original) plan.args.unshift('-n');
+    await exec(plan.executable, plan.args, { env: plan.env, timeout: 15000 });
   }
   async terminal(id, directory = this.store.home) {
     if (this.preview) throw new Error('Launching Claude is disabled in preview mode.');
@@ -64,6 +77,12 @@ export class Launcher {
   }
   async status() {
     try {
+      if (process.platform === 'darwin') {
+        const processes = await macDesktopProcesses();
+        const source = (await this.detect()).desktop;
+        return { running: this.store.state.profiles.filter(profile =>
+          macProcessForProfile(processes, profile, this.store.root, source)).map(profile => profile.id), statusAvailable: true };
+      }
       let commands;
       if (process.platform === 'win32') {
         const executable = (await this.detect()).desktop;
@@ -73,8 +92,7 @@ export class Launcher {
       } else {
         const { stdout } = await exec('/bin/ps', ['-ax', '-o', 'args='], { timeout: 6000, maxBuffer: 4 * 1024 * 1024 });
         commands = stdout.split('\n').filter(line => !line.includes('--type=') &&
-          (process.platform === 'darwin' ? /\/Claude\.app\/Contents\/MacOS\/Claude(?:\s|$)/.test(line)
-            : /(?:^|\/)claude-desktop(?:\s|$)/.test(line)));
+          /(?:^|\/)claude-desktop(?:\s|$)/.test(line));
       }
       const equal = process.platform === 'win32' ? value => value.toLowerCase().replaceAll('\\', '/') : value => value;
       const running = this.store.state.profiles.filter(profile => commands.some(command => {

@@ -20,6 +20,7 @@ const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&a
 const initials = name => [...name.trim().split(/\s+/).slice(0, 2).map(word => [...word][0])].join('').toLocaleUpperCase();
 const avatar = (p, large = false) => `<div class="avatar ${escape(p.color)}${large ? ' large' : ''}" aria-hidden="true">${escape(initials(p.name))}</div>`;
 const colors = ['terracotta', 'sage', 'blue', 'plum', 'amber', 'graphite'];
+const dockColors = { terracotta: 'Orange', sage: 'Green', blue: 'Blue', plum: 'Purple', amber: 'Amber', graphite: 'Graphite' };
 let state, selected, undoID, dialogTask, refreshSequence = 0;
 let dialogBusy = false;
 const dialog = $('#dialog');
@@ -45,6 +46,9 @@ async function refresh() {
     $('#content').setAttribute('aria-busy', 'false');
     $('#new-profile').disabled = !!state.loadError; $('#import-profile').disabled = !!state.loadError;
     $('#settings').disabled = !!state.loadError;
+    $('#install-update').hidden = !state.update;
+    $('#install-update').disabled = !!state.update?.installing;
+    $('#update-label').textContent = state.update?.installing ? 'Installing…' : 'Install update';
     if (state.preview) $('#local-label').textContent = 'Preview · launches disabled';
     renderList(); renderDetail();
     $('#footer').textContent = `Desktop ${state.installed.desktop ? 'detected' : 'not found'}  ·  Code ${state.installed.code ? 'detected' : 'not found'}  ·  ${state.platform === 'darwin' ? 'macOS' : state.platform === 'win32' ? 'Windows' : 'Linux'}  ·  v${state.version}`;
@@ -93,6 +97,19 @@ function field(label, name, value = '', placeholder = '', extra = '') {
 function checkbox(label, name, checked = true, help = '') {
   return `<label class="check"><input type="checkbox" name="${name}" ${checked ? 'checked' : ''}><span>${label}${help ? `<small>${help}</small>` : ''}</span></label>`;
 }
+function dockFields(profile) {
+  return `<fieldset><legend>macOS Dock</legend>
+    ${checkbox('Customize this profile in the Dock', 'customDock', profile?.customDock ?? false)}
+    <div id="dock-options"${profile?.customDock ? '' : ' hidden'}>
+      ${field('Dock name', 'dockName', profile?.dockName, profile?.name || 'Use the profile name')}
+      <label class="field">Dock icon<select name="dockIcon">
+        <option value="default">Claude icon</option>
+        ${colors.map(color => `<option value="${color}" ${profile?.dockIcon === color ? 'selected' : ''}>${dockColors[color]} cloud</option>`).join('')}
+      </select></label>
+      <p class="disclaimer">Applies the next time you quit and reopen Claude Desktop from this profile. macOS may ask you to sign in to Claude again.</p>
+    </div>
+  </fieldset>`;
+}
 function profileEditor(profile) {
   openDialog(profile ? 'Edit your profile' : 'A new space.', 'A name and a color make each account easy to recognize.', `
     ${field('Profile name', 'name', profile?.name, 'Work, Personal, Studio', 'required')}
@@ -100,10 +117,15 @@ function profileEditor(profile) {
     <p class="disclaimer">This is your label, not a verified account identity.</p>
     <fieldset><legend>Color</legend><div class="colors">${colors.map(color => `<label class="color-option" title="${color}"><input type="radio" name="color" value="${color}" aria-label="${color}" ${(profile?.color || 'sage') === color ? 'checked' : ''}><span class="avatar ${color}"></span></label>`).join('')}</div></fieldset>
     <fieldset><legend>Use this profile with</legend>${checkbox('Claude Desktop', 'desktop', profile?.desktop ?? true)}${checkbox('Claude Code in the terminal', 'code', profile?.code ?? true)}</fieldset>
+    ${state.platform === 'darwin' ? dockFields(profile) : ''}
     ${profile && !profile.original ? '<button type="button" class="danger" id="remove-profile">Remove from list</button><p class="disclaimer">Removing a profile keeps its data. Restore it from Settings.</p>' : ''}`,
   profile ? 'Save changes' : 'Create profile', async data => {
-    const result = await request('saveProfile', { id: profile?.id, name: data.get('name'), note: data.get('note'), color: data.get('color'), desktop: data.has('desktop'), code: data.has('code') });
+    const dock = state.platform === 'darwin' ? { customDock: data.has('customDock'), dockName: data.get('dockName'), dockIcon: data.get('dockIcon') } : {};
+    const result = await request('saveProfile', { id: profile?.id, name: data.get('name'), note: data.get('note'), color: data.get('color'), desktop: data.has('desktop'), code: data.has('code'), ...dock });
     selected = result.id; await refresh();
+  });
+  dialog.querySelector('[name="customDock"]')?.addEventListener('change', event => {
+    $('#dock-options').hidden = !event.target.checked;
   });
   $('#remove-profile')?.addEventListener('click', async () => {
     try { await request('removeProfile', { id: profile.id }); dialog.close(); await refresh(); notice(`${profile.name} removed from the list. Its files were kept.`, false, profile.id); }
@@ -207,6 +229,11 @@ $('#content').addEventListener('click', async event => {
     if (name === 'command') { await request('copyCommand', { id: profile.id }); notice('Command copied. Paste it into your preferred terminal.'); }
     await refresh();
   } catch (error) { notice(error.message, true); button.disabled = false; }
+});
+$('#install-update').addEventListener('click', async event => {
+  event.currentTarget.disabled = true;
+  try { await request('installUpdate'); }
+  catch (error) { notice(error.message, true); await refresh(); }
 });
 $('#new-profile').addEventListener('click', () => profileEditor());
 $('#settings').addEventListener('click', settings);

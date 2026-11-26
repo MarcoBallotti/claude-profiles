@@ -116,6 +116,10 @@ export class ProfileStore {
     // Native v1 labels had no length or control-character restrictions. Preserve
     // them when loading, migrating, archiving and changing unrelated profiles.
     if (typeof p.note !== 'string' || (editing && (p.note.length > 200 || control.test(p.note)))) fail('Keep the optional label under 200 characters on one line.');
+    if (p.dockName !== undefined && (typeof p.dockName !== 'string' || p.dockName !== p.dockName.trim() ||
+        [...graphemes.segment(p.dockName)].length > 48 || control.test(p.dockName))) fail('Keep the Dock name to 48 characters without control characters.');
+    if (p.dockIcon !== undefined && !['default', ...COLORS].includes(p.dockIcon)) fail('Choose a Dock icon.');
+    if (p.customDock !== undefined && typeof p.customDock !== 'boolean') fail('Invalid Dock customization setting.');
     if (!COLORS.includes(p.color)) fail('Choose a profile color.');
     if (typeof p.desktop !== 'boolean' || typeof p.code !== 'boolean' || (!p.desktop && !p.code)) fail('Enable Desktop, Code, or both.');
     if (typeof p.original !== 'boolean' || typeof p.imported !== 'boolean') fail('Invalid profile type.');
@@ -132,6 +136,9 @@ export class ProfileStore {
     const existing = input.id ? this.get(input.id) : null;
     const profile = { ...(existing || this.managed()), name: String(input.name ?? '').trim(),
       note: String(input.note ?? '').trim(), color: input.color, desktop: input.desktop, code: input.code };
+    if (Object.hasOwn(input, 'customDock')) {
+      Object.assign(profile, { customDock: input.customDock, dockName: String(input.dockName ?? '').trim(), dockIcon: input.dockIcon });
+    }
     this.validateFields(profile, !existing || profile.note !== existing.note);
     if (existing) doc.profiles[doc.profiles.findIndex(p => p.id === existing.id)] = profile;
     else doc.profiles.push(profile);
